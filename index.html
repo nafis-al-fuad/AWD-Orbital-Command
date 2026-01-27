@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AWD MESH | ORBITAL COMMAND</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
@@ -15,12 +15,10 @@
 
     <style>
         :root {
-            /* Palette: Deep Navy/Charcoal instead of pure black */
             --bg-deep: #05070a;
             --bg-panel: #0f141e;
             --glass-border: rgba(255, 255, 255, 0.08);
 
-            /* Theme Variables (Default EMQX Cyan) */
             --theme-primary: #00f3ff;
             --theme-secondary: #00ff9d;
             --theme-warn: #ffaa00;
@@ -44,7 +42,7 @@
             perspective: 1500px;
         }
 
-        /* --- 0. SCREEN FX (Vignette & Scanline) --- */
+        /* --- SCREEN FX --- */
         .vignette {
             position: fixed;
             top: 0;
@@ -81,7 +79,7 @@
             }
         }
 
-        /* --- 1. TRANSITION FX (The Glitch & Wipe) --- */
+        /* --- TRANSITION FX --- */
         .glitch-active {
             animation: glitch-anim 0.15s cubic-bezier(.25, .46, .45, .94) both infinite;
         }
@@ -141,7 +139,7 @@
             }
         }
 
-        /* --- 2. LAYERS & BACKGROUND --- */
+        /* --- BACKGROUND LAYERS --- */
         #particle-canvas {
             position: fixed;
             top: 0;
@@ -179,7 +177,6 @@
             }
         }
 
-        /* Stronger Grid Floor */
         #grid-floor {
             position: absolute;
             top: -50%;
@@ -195,7 +192,6 @@
             mask-image: radial-gradient(circle, black 30%, transparent 70%);
         }
 
-        /* Circuit Traces on Floor */
         #grid-floor::after {
             content: '';
             position: absolute;
@@ -207,7 +203,7 @@
             opacity: 0.03;
         }
 
-        /* --- 3. BOOT SCREEN --- */
+        /* --- BOOT SCREEN --- */
         #boot-layer {
             position: fixed;
             top: 0;
@@ -252,7 +248,7 @@
             padding-left: 15px;
         }
 
-        /* --- 4. HEADER --- */
+        /* --- HEADER --- */
         .header {
             padding: 15px 30px;
             display: flex;
@@ -270,7 +266,6 @@
             transform: translateY(0);
         }
 
-        /* EXIT BUTTON */
         .sys-exit {
             text-decoration: none;
             font-family: 'JetBrains Mono';
@@ -292,7 +287,6 @@
             box-shadow: 0 0 15px var(--theme-danger);
         }
 
-        /* TOGGLE SWITCH */
         .broker-switch {
             display: flex;
             align-items: center;
@@ -331,7 +325,7 @@
             box-shadow: 0 0 10px var(--theme-primary);
         }
 
-        /* --- 5. MAIN STAGE --- */
+        /* --- MAIN STAGE --- */
         .main-stage {
             flex: 1;
             display: flex;
@@ -372,16 +366,13 @@
             transform: rotateX(55deg) rotateZ(-45deg) scale(1);
         }
 
-        /* 3D SECTORS (Always Glow) */
         .sector-3d {
             position: relative;
             width: 100%;
             height: 100%;
             background: rgba(15, 20, 25, 0.6);
             border: 1px solid var(--theme-primary);
-            /* ALWAYS ON OUTLINE */
             box-shadow: 0 0 15px var(--theme-glow), inset 0 0 20px rgba(0, 0, 0, 0.5);
-            /* ALWAYS GLOW */
             transform-style: preserve-3d;
             transition: all 0.4s;
             cursor: pointer;
@@ -392,7 +383,6 @@
             border-color: #fff;
         }
 
-        /* Floor Shadow */
         .sector-3d::after {
             content: '';
             position: absolute;
@@ -421,7 +411,7 @@
             box-shadow: inset 0 0 30px var(--theme-primary);
         }
 
-        /* --- 6. HUD CARDS --- */
+        /* --- HUD CARDS --- */
         .hud-section {
             flex: 1;
             max-width: 450px;
@@ -454,7 +444,6 @@
             transform: translateX(-5px);
         }
 
-        /* Hardware Decals & Crosshairs */
         .decal-tl {
             position: absolute;
             top: 0;
@@ -486,7 +475,6 @@
             letter-spacing: 2px;
         }
 
-        /* Typography */
         .micro-label {
             font-family: 'JetBrains Mono';
             font-size: 0.6rem;
@@ -537,7 +525,7 @@
             vector-effect: non-scaling-stroke;
         }
 
-        /* --- 7. FOOTER --- */
+        /* --- FOOTER --- */
         .sys-footer {
             height: 35px;
             background: #000;
@@ -569,6 +557,74 @@
 
             100% {
                 transform: translateX(-100%);
+            }
+        }
+
+        /* --- MOBILE RESPONSIVENESS --- */
+        @media (max-width: 768px) {
+            .header {
+                padding: 10px 15px;
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+
+            .header>div {
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .main-stage {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+
+            .map-section {
+                flex: 1;
+                min-height: 40vh;
+                /* Give map some space */
+                overflow: hidden;
+            }
+
+            .iso-plane {
+                /* Scale down map for phones */
+                width: 280px;
+                height: 280px;
+                gap: 20px;
+            }
+
+            .iso-plane.booted {
+                transform: rotateX(55deg) rotateZ(-45deg) scale(0.65);
+            }
+
+            .hud-section {
+                flex: auto;
+                max-width: 100%;
+                padding: 15px;
+                background: linear-gradient(0deg, #000, transparent);
+                /* Slide up from bottom on mobile instead of right */
+                transform: translateY(50px);
+                opacity: 0;
+                transition: all 1s ease;
+                gap: 15px;
+            }
+
+            .hud-section.booted {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            .hud-card {
+                padding: 15px;
+            }
+
+            .big-val {
+                font-size: 1.8rem;
+            }
+
+            .sys-footer {
+                padding: 0 10px;
+                font-size: 0.6rem;
             }
         }
     </style>
@@ -744,7 +800,6 @@
         let histW2 = new Array(20).fill(0);
         let pktCount = 8492;
 
-        // --- 1. BOOT SEQUENCE ---
         window.onload = () => {
             initParticles();
             initMouseTilt();
@@ -772,7 +827,6 @@
                 bl.style.opacity = 0;
                 bl.style.pointerEvents = 'none';
 
-                // Trigger Unfold
                 document.querySelector('.header').classList.add('booted');
                 document.querySelector('.hud-section').classList.add('booted');
                 document.querySelector('.main-stage').classList.add('booted');
@@ -786,44 +840,35 @@
             }, 3500);
         };
 
-        // --- 2. SATELLITE HANDOVER (Toggle) ---
         function toggleBroker() {
             const track = document.getElementById('broker-toggle');
             const isEmqx = !track.classList.contains('active');
             const targetKey = isEmqx ? 'hive' : 'emqx';
             const theme = CONFIG[targetKey];
 
-            // 1. Physical Switch Animation
             if (isEmqx) track.classList.add('active'); else track.classList.remove('active');
-
-            // 2. TRIGGER THE GLITCH (Important!)
             document.body.classList.add('glitch-active');
 
-            // 3. Trigger Vertical Wipe
             const scan = document.getElementById('scanner');
             scan.classList.remove('active');
-            void scan.offsetWidth; // Force Reflow
+            void scan.offsetWidth;
             scan.classList.add('active');
 
-            // 4. Color Shift
             document.documentElement.style.setProperty('--theme-primary', theme.color);
             document.documentElement.style.setProperty('--theme-secondary', theme.sec);
             document.documentElement.style.setProperty('--theme-glow', theme.glow);
 
-            // 5. Scramble Numbers
             scrambleText('w1-val');
             scrambleText('s1-val');
 
-            // 6. Network Logic
             if (client) try { client.disconnect() } catch (e) { };
 
             setTimeout(() => {
                 document.body.classList.remove('glitch-active');
                 connectMQTT(theme);
-            }, 600); // 600ms transition time
+            }, 600);
         }
 
-        // --- 3. MQTT LOGIC ---
         function connectMQTT(theme) {
             const id = "cmd_" + new Date().getTime();
             client = new Paho.MQTT.Client(theme.host, theme.port, id);
@@ -841,7 +886,6 @@
             });
         }
 
-        // --- 4. DATA HANDLING ---
         function processData(data) {
             const w1 = calcWater(data.w1);
             const w2 = calcWater(data.w2);
@@ -886,9 +930,9 @@
             }
         }
 
-        // --- 5. VISUAL FX ---
         function initMouseTilt() {
             document.addEventListener('mousemove', (e) => {
+                if (window.innerWidth < 768) return; // Disable on mobile
                 const x = (window.innerWidth / 2 - e.clientX) / 100;
                 const y = (window.innerHeight / 2 - e.clientY) / 100;
                 const plane = document.querySelector('.tilt-wrapper');
@@ -899,6 +943,7 @@
         }
 
         function linkCards(cardId, mapId) {
+            if (window.innerWidth < 768) return; // Disable on mobile
             const linkLine = document.getElementById('active-link');
             linkLine.style.display = 'block';
             function update() {
@@ -906,7 +951,7 @@
                 const cBox = document.getElementById(cardId).getBoundingClientRect();
                 const mBox = document.getElementById(mapId).getBoundingClientRect();
 
-                linkLine.setAttribute('x1', cBox.left + 20); // From inside card
+                linkLine.setAttribute('x1', cBox.left + 20);
                 linkLine.setAttribute('y1', cBox.top + (cBox.height / 2));
                 linkLine.setAttribute('x2', mBox.left + (mBox.width / 2));
                 linkLine.setAttribute('y2', mBox.top + (mBox.height / 2));
@@ -952,7 +997,6 @@
             loop();
         }
 
-        // --- UTILS ---
         function calcWater(raw) { if (!raw) return 0; return Math.max(0, Math.min((raw / CONFIG.maxW) * CONFIG.maxCm, 15)).toFixed(1); }
         function calcSoil(raw) { if (!raw) return 0; return Math.round(Math.max(0, Math.min((raw - CONFIG.dry) * 100 / (CONFIG.wet - CONFIG.dry), 100))); }
         function logEvent(msg) { document.getElementById('log-text').innerHTML += ` &nbsp;&nbsp; [${new Date().toLocaleTimeString('en-US', { hour12: false })}] ${msg}`; }
@@ -960,5 +1004,4 @@
     </script>
 </body>
 
-
-</html> 
+</html>
