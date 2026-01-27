@@ -1,30 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AWD MESH | ORBITAL COMMAND</title>
-
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
-        rel="stylesheet">
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💠</text></svg>">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💠</text></svg>">
 
     <style>
         :root {
             --bg-deep: #05070a;
             --bg-panel: #0f141e;
             --glass-border: rgba(255, 255, 255, 0.08);
-
-            --theme-primary: #00f3ff;
+            
+            --theme-primary: #00f3ff; 
             --theme-secondary: #00ff9d;
             --theme-warn: #ffaa00;
             --theme-danger: #ff003c;
             --theme-glow: rgba(0, 243, 255, 0.3);
-
+            
             --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
@@ -32,8 +30,7 @@
             background-color: var(--bg-deep);
             color: #d0d6e0;
             font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             overflow: hidden;
             height: 100vh;
             display: flex;
@@ -42,523 +39,207 @@
             perspective: 1500px;
         }
 
-        /* --- SCREEN FX --- */
+        /* --- VISUAL FX LAYERS --- */
         .vignette {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle at center, transparent 40%, #000 100%);
-            pointer-events: none;
-            z-index: 5;
-            opacity: 0.8;
+            pointer-events: none; z-index: 5; opacity: 0.8;
         }
-
         .scanline-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            position: fixed; top: 0; left: 0; width: 100%; height: 2px;
+            background: rgba(255,255,255,0.1);
+            box-shadow: 0 0 10px rgba(255,255,255,0.2);
             animation: scanScreen 8s linear infinite;
-            pointer-events: none;
-            z-index: 6;
-            opacity: 0.3;
+            pointer-events: none; z-index: 6; opacity: 0.3;
         }
+        @keyframes scanScreen { 0% { top: -10%; } 100% { top: 110%; } }
 
-        @keyframes scanScreen {
-            0% {
-                top: -10%;
-            }
-
-            100% {
-                top: 110%;
-            }
-        }
-
-        /* --- TRANSITION FX --- */
-        .glitch-active {
-            animation: glitch-anim 0.15s cubic-bezier(.25, .46, .45, .94) both infinite;
-        }
-
+        /* --- ANIMATIONS (Glitch & Wipe) --- */
+        .glitch-active { animation: glitch-anim 0.15s cubic-bezier(.25, .46, .45, .94) both infinite; }
         @keyframes glitch-anim {
-            0% {
-                transform: translate(0);
-            }
-
-            20% {
-                transform: translate(-4px, 4px);
-                filter: hue-rotate(90deg) contrast(2);
-            }
-
-            40% {
-                transform: translate(-4px, -4px);
-                filter: hue-rotate(-90deg) contrast(2);
-            }
-
-            60% {
-                transform: translate(4px, 4px);
-            }
-
-            80% {
-                transform: translate(4px, -4px);
-            }
-
-            100% {
-                transform: translate(0);
-            }
+            0% { transform: translate(0); }
+            20% { transform: translate(-4px, 4px); filter: hue-rotate(90deg) contrast(2); }
+            40% { transform: translate(-4px, -4px); filter: hue-rotate(-90deg) contrast(2); }
+            60% { transform: translate(4px, 4px); }
+            80% { transform: translate(4px, -4px); }
+            100% { transform: translate(0); }
         }
 
         .scan-wipe {
-            position: fixed;
-            top: -150%;
-            left: 0;
-            width: 100%;
-            height: 100px;
+            position: fixed; top: -150%; left: 0; width: 100%; height: 100px;
             background: var(--theme-primary);
             box-shadow: 0 0 150px var(--theme-primary);
-            z-index: 9998;
-            opacity: 0.8;
-            pointer-events: none;
+            z-index: 9998; opacity: 0.8; pointer-events: none;
         }
+        .scan-wipe.active { animation: wipeDown 1s var(--ease-out); }
+        @keyframes wipeDown { 0% { top: -20%; } 100% { top: 150%; } }
 
-        .scan-wipe.active {
-            animation: wipeDown 1s var(--ease-out);
+        /* --- BACKGROUNDS --- */
+        #particle-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; opacity: 0.4; }
+        
+        #link-layer { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            pointer-events: none; z-index: 50; filter: drop-shadow(0 0 5px var(--theme-primary)); 
         }
-
-        @keyframes wipeDown {
-            0% {
-                top: -20%;
-            }
-
-            100% {
-                top: 150%;
-            }
-        }
-
-        /* --- BACKGROUND LAYERS --- */
-        #particle-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: -1;
-            opacity: 0.4;
-        }
-
-        #link-layer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 50;
-            filter: drop-shadow(0 0 5px var(--theme-primary));
-        }
-
         .connection-line {
-            stroke: var(--theme-primary);
-            stroke-width: 2;
-            stroke-dasharray: 10 200;
-            stroke-linecap: round;
-            animation: pulseFlow 2s infinite linear;
-            opacity: 0.9;
+            stroke: var(--theme-primary); stroke-width: 2;
+            stroke-dasharray: 10 200; stroke-linecap: round;
+            animation: pulseFlow 2s infinite linear; opacity: 0.9;
         }
-
-        @keyframes pulseFlow {
-            to {
-                stroke-dashoffset: -210;
-            }
-        }
+        @keyframes pulseFlow { to { stroke-dashoffset: -210; } }
 
         #grid-floor {
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background:
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
             background-size: 50px 50px;
-            transform: rotateX(60deg);
-            z-index: -2;
+            transform: rotateX(60deg); z-index: -2;
             mask-image: radial-gradient(circle, black 30%, transparent 70%);
         }
-
         #grid-floor::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: repeating-linear-gradient(90deg, transparent 0, transparent 49px, var(--theme-primary) 50px);
             opacity: 0.03;
         }
 
         /* --- BOOT SCREEN --- */
         #boot-layer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: opacity 0.8s;
         }
-
-        .hex-loader {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 20px;
-        }
-
-        .hex-path {
-            fill: none;
-            stroke: #333;
-            stroke-width: 4;
-            transition: stroke 0.3s;
-        }
-
-        .hex-path.active {
-            stroke: var(--theme-primary);
-            filter: drop-shadow(0 0 10px var(--theme-primary));
-        }
-
+        .hex-loader { width: 80px; height: 80px; margin-bottom: 20px; }
+        .hex-path { fill: none; stroke: #333; stroke-width: 4; transition: stroke 0.3s; }
+        .hex-path.active { stroke: var(--theme-primary); filter: drop-shadow(0 0 10px var(--theme-primary)); }
+        
         .terminal-log {
-            font-family: 'JetBrains Mono';
-            font-size: 0.8rem;
-            color: var(--theme-primary);
-            width: 320px;
-            height: 120px;
-            overflow: hidden;
-            border-left: 2px solid var(--theme-secondary);
-            padding-left: 15px;
+            font-family: 'JetBrains Mono'; font-size: 0.8rem; color: var(--theme-primary);
+            width: 320px; height: 120px; overflow: hidden;
+            border-left: 2px solid var(--theme-secondary); padding-left: 15px;
         }
 
         /* --- HEADER --- */
         .header {
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(15, 20, 30, 0.8);
-            backdrop-filter: blur(15px);
+            padding: 15px 30px; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(15, 20, 30, 0.8); backdrop-filter: blur(15px);
             border-bottom: 1px solid var(--glass-border);
-            z-index: 100;
-            transform: translateY(-150%);
-            transition: transform 0.8s var(--ease-out) 0.5s;
+            z-index: 100; transform: translateY(-150%); transition: transform 0.8s var(--ease-out) 0.5s;
         }
-
-        .header.booted {
-            transform: translateY(0);
-        }
+        .header.booted { transform: translateY(0); }
 
         .sys-exit {
-            text-decoration: none;
-            font-family: 'JetBrains Mono';
-            font-size: 0.75rem;
-            color: var(--theme-danger);
-            border: 1px solid rgba(255, 0, 60, 0.3);
-            background: rgba(20, 0, 0, 0.4);
-            padding: 6px 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: 0.3s;
+            text-decoration: none; font-family: 'JetBrains Mono'; font-size: 0.75rem;
+            color: var(--theme-danger); border: 1px solid rgba(255, 0, 60, 0.3);
+            background: rgba(20, 0, 0, 0.4); padding: 6px 14px;
+            display: flex; align-items: center; gap: 8px; transition: 0.3s;
             letter-spacing: 1px;
         }
-
-        .sys-exit:hover {
-            background: var(--theme-danger);
-            color: #000;
-            box-shadow: 0 0 15px var(--theme-danger);
-        }
+        .sys-exit:hover { background: var(--theme-danger); color: #000; box-shadow: 0 0 15px var(--theme-danger); }
 
         .broker-switch {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 4px 6px;
-            border-radius: 4px;
-            border: 1px solid var(--glass-border);
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(0,0,0,0.3); padding: 4px 6px; border-radius: 4px; border: 1px solid var(--glass-border);
         }
-
         .switch-track {
-            position: relative;
-            width: 50px;
-            height: 24px;
-            background: #000;
-            border-radius: 2px;
-            cursor: pointer;
-            border: 1px solid #333;
+            position: relative; width: 50px; height: 24px; background: #000;
+            border-radius: 2px; cursor: pointer; border: 1px solid #333;
         }
-
         .switch-thumb {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 20px;
-            height: 18px;
-            background: #444;
-            transition: 0.3s cubic-bezier(0.6, -0.28, 0.735, 0.045);
+            position: absolute; top: 2px; left: 2px; width: 20px; height: 18px;
+            background: #444; transition: 0.3s cubic-bezier(0.6, -0.28, 0.735, 0.045);
             border: 1px solid #666;
         }
-
-        .switch-track.active .switch-thumb {
-            left: 26px;
-            background: var(--theme-primary);
-            border-color: #fff;
-            box-shadow: 0 0 10px var(--theme-primary);
-        }
+        .switch-track.active .switch-thumb { left: 26px; background: var(--theme-primary); border-color: #fff; box-shadow: 0 0 10px var(--theme-primary); }
 
         /* --- MAIN STAGE --- */
-        .main-stage {
-            flex: 1;
-            display: flex;
-            opacity: 0;
-            transition: opacity 1s;
-        }
+        .main-stage { flex: 1; display: flex; opacity: 0; transition: opacity 1s; }
+        .main-stage.booted { opacity: 1; }
 
-        .main-stage.booted {
-            opacity: 1;
+        .map-section { 
+            flex: 2; display: flex; justify-content: center; align-items: center; 
+            perspective: 1200px; position: relative; 
         }
-
-        .map-section {
-            flex: 2;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            perspective: 1200px;
-            position: relative;
-        }
-
-        .tilt-wrapper {
-            transform-style: preserve-3d;
-            transition: transform 0.1s linear;
-        }
+        
+        .tilt-wrapper { transform-style: preserve-3d; transition: transform 0.1s linear; }
 
         .iso-plane {
-            transform: rotateX(55deg) rotateZ(-45deg) scale(0);
-            transform-style: preserve-3d;
-            width: 450px;
-            height: 450px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
+            transform: rotateX(55deg) rotateZ(-45deg) scale(0); 
+            transform-style: preserve-3d; width: 450px; height: 450px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 40px; 
             transition: transform 1.5s var(--ease-out) 1s;
         }
-
-        .iso-plane.booted {
-            transform: rotateX(55deg) rotateZ(-45deg) scale(1);
-        }
+        .iso-plane.booted { transform: rotateX(55deg) rotateZ(-45deg) scale(1); }
 
         .sector-3d {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 20, 25, 0.6);
+            position: relative; width: 100%; height: 100%;
+            background: rgba(15, 20, 25, 0.6); 
             border: 1px solid var(--theme-primary);
-            box-shadow: 0 0 15px var(--theme-glow), inset 0 0 20px rgba(0, 0, 0, 0.5);
-            transform-style: preserve-3d;
-            transition: all 0.4s;
+            box-shadow: 0 0 15px var(--theme-glow), inset 0 0 20px rgba(0,0,0,0.5);
+            transform-style: preserve-3d; transition: all 0.4s;
             cursor: pointer;
         }
-
-        .sector-3d:hover {
-            transform: translateZ(30px);
-            border-color: #fff;
-        }
-
+        .sector-3d:hover { transform: translateZ(30px); border-color: #fff; }
         .sector-3d::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            transform: translateZ(-40px);
-            background: #000;
-            filter: blur(20px);
-            opacity: 0.8;
+            content: ''; position: absolute; width: 100%; height: 100%; top:0; left:0;
+            transform: translateZ(-40px); background: #000; filter: blur(20px); opacity: 0.8;
         }
 
         .water-volume {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--theme-primary);
-            opacity: 0.15;
-            transform-origin: bottom;
-            transform: scaleZ(0);
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
+            background: var(--theme-primary); opacity: 0.15;
+            transform-origin: bottom; transform: scaleZ(0);
             transition: transform 1s var(--ease-out);
             border: 1px solid var(--theme-primary);
             box-shadow: inset 0 0 30px var(--theme-primary);
         }
 
         /* --- HUD CARDS --- */
-        .hud-section {
-            flex: 1;
-            max-width: 450px;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            z-index: 60;
-            transform: translateX(120%);
-            transition: transform 1s var(--ease-out) 0.8s;
+        .hud-section { 
+            flex: 1; max-width: 450px; padding: 30px;
+            display: flex; flex-direction: column; gap: 20px;
+            z-index: 60; transform: translateX(120%); transition: transform 1s var(--ease-out) 0.8s;
         }
-
-        .hud-section.booted {
-            transform: translateX(0);
-        }
+        .hud-section.booted { transform: translateX(0); }
 
         .hud-card {
-            position: relative;
-            background: var(--bg-panel);
-            padding: 25px;
-            border-radius: 12px;
-            border: 1px solid var(--glass-border);
-            transition: 0.3s;
-            overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            position: relative; background: var(--bg-panel); padding: 25px;
+            border-radius: 12px; border: 1px solid var(--glass-border); 
+            transition: 0.3s; overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
+        .hud-card:hover { border-color: var(--theme-primary); transform: translateX(-5px); }
 
-        .hud-card:hover {
-            border-color: var(--theme-primary);
-            transform: translateX(-5px);
-        }
-
-        .decal-tl {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 10px;
-            height: 10px;
-            border-top: 1px solid #666;
-            border-left: 1px solid #666;
-        }
-
-        .decal-br {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 10px;
-            height: 10px;
-            border-bottom: 1px solid #666;
-            border-right: 1px solid #666;
-        }
-
+        .decal-tl { position: absolute; top: 0; left: 0; width: 10px; height: 10px; border-top: 1px solid #666; border-left: 1px solid #666; }
+        .decal-br { position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; border-bottom: 1px solid #666; border-right: 1px solid #666; }
+        
         .hw-id {
-            position: absolute;
-            top: 12px;
-            right: 15px;
-            writing-mode: vertical-rl;
-            font-family: 'JetBrains Mono';
-            font-size: 0.5rem;
-            color: #445;
-            letter-spacing: 2px;
+            position: absolute; top: 12px; right: 15px; writing-mode: vertical-rl;
+            font-family: 'JetBrains Mono'; font-size: 0.5rem; color: #445; letter-spacing: 2px;
         }
 
-        .micro-label {
-            font-family: 'JetBrains Mono';
-            font-size: 0.6rem;
-            color: var(--theme-secondary);
-            margin-bottom: 4px;
-            display: block;
-            opacity: 0.8;
-        }
-
-        .card-title {
-            font-family: 'Inter';
-            font-weight: 800;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-            color: #fff;
-        }
-
-        .bracket-val {
-            font-family: 'JetBrains Mono';
-            font-size: 0.8rem;
-            color: var(--theme-primary);
-        }
-
-        .big-val {
-            font-family: 'JetBrains Mono';
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #fff;
-            letter-spacing: -2px;
-        }
-
+        .micro-label { font-family: 'JetBrains Mono'; font-size: 0.6rem; color: var(--theme-secondary); margin-bottom: 4px; display: block; opacity: 0.8; }
+        .card-title { font-family: 'Inter'; font-weight: 800; font-size: 0.9rem; letter-spacing: 1px; color: #fff; }
+        .bracket-val { font-family: 'JetBrains Mono'; font-size: 0.8rem; color: var(--theme-primary); }
+        .big-val { font-family: 'JetBrains Mono'; font-size: 2.5rem; font-weight: 700; color: #fff; letter-spacing: -2px; }
+        
         .spark-wrapper {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            opacity: 0.2;
-            pointer-events: none;
-            z-index: 0;
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 60px;
+            opacity: 0.2; pointer-events: none; z-index: 0;
             mask-image: linear-gradient(to top, black, transparent);
         }
-
-        .spark-line {
-            fill: none;
-            stroke: var(--theme-primary);
-            stroke-width: 2;
-            vector-effect: non-scaling-stroke;
-        }
+        .spark-line { fill: none; stroke: var(--theme-primary); stroke-width: 2; vector-effect: non-scaling-stroke; }
 
         /* --- FOOTER --- */
         .sys-footer {
-            height: 35px;
-            background: #000;
-            border-top: 1px solid var(--glass-border);
-            display: flex;
-            align-items: center;
-            padding: 0 30px;
-            font-family: 'JetBrains Mono';
-            font-size: 0.7rem;
+            height: 35px; background: #000; border-top: 1px solid var(--glass-border);
+            display: flex; align-items: center; padding: 0 30px; font-family: 'JetBrains Mono'; font-size: 0.7rem;
             z-index: 100;
         }
-
-        .log-ticker {
-            flex: 1;
-            overflow: hidden;
-            white-space: nowrap;
-            color: #556;
-        }
-
-        .log-content {
-            display: inline-block;
-            animation: ticker 30s linear infinite;
-        }
-
-        @keyframes ticker {
-            0% {
-                transform: translateX(0);
-            }
-
-            100% {
-                transform: translateX(-100%);
-            }
-        }
+        .log-ticker { flex: 1; overflow: hidden; white-space: nowrap; color: #556; }
+        .log-content { display: inline-block; animation: ticker 30s linear infinite; }
+        @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
         /* --- MOBILE RESPONSIVENESS --- */
         @media (max-width: 768px) {
@@ -568,76 +249,36 @@
                 gap: 10px;
                 align-items: stretch;
             }
-
-            .header>div {
-                justify-content: space-between;
-                width: 100%;
-            }
-
-            .main-stage {
-                flex-direction: column;
-                overflow-y: auto;
-            }
-
-            .map-section {
-                flex: 1;
-                min-height: 40vh;
-                /* Give map some space */
-                overflow: hidden;
-            }
-
-            .iso-plane {
-                /* Scale down map for phones */
-                width: 280px;
-                height: 280px;
-                gap: 20px;
-            }
-
-            .iso-plane.booted {
-                transform: rotateX(55deg) rotateZ(-45deg) scale(0.65);
-            }
+            .header > div { justify-content: space-between; width: 100%; }
+            .sys-exit { font-size: 0.65rem; padding: 4px 8px; }
+            
+            .main-stage { flex-direction: column; overflow-y: auto; }
+            .map-section { flex: 1; min-height: 45vh; overflow: hidden; }
+            
+            .iso-plane { width: 280px; height: 280px; gap: 20px; }
+            .iso-plane.booted { transform: rotateX(55deg) rotateZ(-45deg) scale(0.65); }
 
             .hud-section {
-                flex: auto;
-                max-width: 100%;
-                padding: 15px;
+                flex: auto; max-width: 100%; padding: 15px;
                 background: linear-gradient(0deg, #000, transparent);
-                /* Slide up from bottom on mobile instead of right */
-                transform: translateY(50px);
-                opacity: 0;
-                transition: all 1s ease;
+                transform: translateY(50px); opacity: 0; transition: all 1s ease;
                 gap: 15px;
             }
+            .hud-section.booted { transform: translateY(0); opacity: 1; }
 
-            .hud-section.booted {
-                transform: translateY(0);
-                opacity: 1;
-            }
-
-            .hud-card {
-                padding: 15px;
-            }
-
-            .big-val {
-                font-size: 1.8rem;
-            }
-
-            .sys-footer {
-                padding: 0 10px;
-                font-size: 0.6rem;
-            }
+            .hud-card { padding: 15px; }
+            .big-val { font-size: 1.8rem; }
+            .sys-footer { padding: 0 10px; font-size: 0.6rem; }
         }
+
     </style>
 </head>
-
 <body>
 
     <div class="vignette"></div>
     <div class="scanline-bar"></div>
     <canvas id="particle-canvas"></canvas>
-    <svg id="link-layer">
-        <line id="active-link" class="connection-line" x1="0" y1="0" x2="0" y2="0" style="display:none;" />
-    </svg>
+    <svg id="link-layer"><line id="active-link" class="connection-line" x1="0" y1="0" x2="0" y2="0" style="display:none;"/></svg>
     <div class="scan-wipe" id="scanner"></div>
 
     <div id="boot-layer">
@@ -664,48 +305,43 @@
                 <span>[X] SYS_EXIT</span>
             </a>
             <div>
-                <h1 style="margin:0; font-size:1.1rem; font-weight:800; letter-spacing:1px;">AWD <span
-                        style="color:var(--theme-primary)">PRIME</span></h1>
-                <div style="font-family:'JetBrains Mono'; font-size:0.6rem; color:#666; letter-spacing:2px;">ORBITAL
-                    COMMAND // V4.0</div>
+                <h1 style="margin:0; font-size:1.1rem; font-weight:800; letter-spacing:1px;">AWD <span style="color:var(--theme-primary)">PRIME</span></h1>
+                <div style="font-family:'JetBrains Mono'; font-size:0.6rem; color:#666; letter-spacing:2px;">ORBITAL COMMAND // V4.0</div>
             </div>
         </div>
-
+        
         <div style="display:flex; gap:20px; align-items:center;">
-            <div style="text-align:right;">
-                <div class="micro-label">PACKET_LOSS: 0%</div>
-                <div style="font-size:0.8rem; font-family:'JetBrains Mono'; color:var(--theme-secondary)"
-                    id="packet-count">PKTS: 8492</div>
-            </div>
-
-            <div class="broker-switch">
-                <div style="font-size:0.7rem; font-family:'JetBrains Mono'; color:#fff;">EMQX</div>
-                <div class="switch-track" id="broker-toggle" onclick="toggleBroker()">
-                    <div class="switch-thumb"></div>
-                </div>
-                <div style="font-size:0.7rem; font-family:'JetBrains Mono'; color:#fff;">HIVE</div>
-            </div>
+             <div style="text-align:right;">
+                 <div class="micro-label">PACKET_LOSS: 0%</div>
+                 <div style="font-size:0.8rem; font-family:'JetBrains Mono'; color:var(--theme-secondary)" id="packet-count">PKTS: 8492</div>
+             </div>
+             
+             <div class="broker-switch">
+                 <div style="font-size:0.7rem; font-family:'JetBrains Mono'; color:#fff;">EMQX</div>
+                 <div class="switch-track" id="broker-toggle" onclick="toggleBroker()">
+                     <div class="switch-thumb"></div>
+                 </div>
+                 <div style="font-size:0.7rem; font-family:'JetBrains Mono'; color:#fff;">HIVE</div>
+             </div>
         </div>
     </header>
 
     <div class="main-stage">
-
+        
         <div class="map-section">
             <div class="tilt-wrapper">
                 <div class="iso-plane">
-
+                    
                     <div class="sector-3d" id="s1-target">
                         <div class="water-volume" id="w1-vol"></div>
-                        <div
-                            style="position:absolute; bottom:-40px; width:100%; text-align:center; font-family:'JetBrains Mono'; font-size:0.7rem; opacity:0.8; color:var(--theme-primary);">
+                        <div style="position:absolute; bottom:-40px; width:100%; text-align:center; font-family:'JetBrains Mono'; font-size:0.7rem; opacity:0.8; color:var(--theme-primary);">
                             [ SECTOR_01 ]
                         </div>
                     </div>
 
                     <div class="sector-3d" id="s2-target">
                         <div class="water-volume" id="w2-vol"></div>
-                        <div
-                            style="position:absolute; bottom:-40px; width:100%; text-align:center; font-family:'JetBrains Mono'; font-size:0.7rem; opacity:0.8; color:var(--theme-primary);">
+                        <div style="position:absolute; bottom:-40px; width:100%; text-align:center; font-family:'JetBrains Mono'; font-size:0.7rem; opacity:0.8; color:var(--theme-primary);">
                             [ SECTOR_02 ]
                         </div>
                     </div>
@@ -715,60 +351,48 @@
         </div>
 
         <div class="hud-section">
-
+            
             <div class="hud-card" onmouseenter="linkCards('card1', 's1-target')" onmouseleave="hideLink()" id="card1">
-                <div class="decal-tl"></div>
-                <div class="decal-br"></div>
+                <div class="decal-tl"></div><div class="decal-br"></div>
                 <div class="hw-id">REV: 4.0.2</div>
-                <div class="spark-wrapper"><svg viewBox="0 0 100 50" preserveAspectRatio="none"
-                        style="width:100%; height:100%;">
-                        <polyline id="spark-w1" class="spark-line" points="" />
-                    </svg></div>
-
+                <div class="spark-wrapper"><svg viewBox="0 0 100 50" preserveAspectRatio="none" style="width:100%; height:100%;"><polyline id="spark-w1" class="spark-line" points=""/></svg></div>
+                
                 <div style="margin-bottom:15px;">
                     <div class="micro-label">COORDINATES: 23.81° N, 90.41° E</div>
                     <div class="card-title">SECTOR 01 // PADDY</div>
-                    <div id="g1-stat" class="bracket-val" style="margin-top:5px; color:var(--theme-danger)">[ STATUS:
-                        GATE_CLOSED ]</div>
+                    <div id="g1-stat" class="bracket-val" style="margin-top:5px; color:var(--theme-danger)">[ STATUS: GATE_CLOSED ]</div>
                 </div>
-
+                
                 <div style="display:flex; align-items:baseline; gap:5px;">
                     <span class="big-val" id="w1-val">0.0</span> <span style="color:#666; font-size:0.9rem;">cm</span>
                 </div>
-
+                
                 <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">
                     <div class="micro-label">SENSOR_ARRAY_B</div>
                     <div class="sub-val" style="color:#aaa;">SOIL SATURATION</div>
-                    <div style="font-family:'JetBrains Mono'; font-size:1.2rem; color:var(--theme-secondary); margin-top:5px;"
-                        id="s1-val">-- %</div>
+                    <div style="font-family:'JetBrains Mono'; font-size:1.2rem; color:var(--theme-secondary); margin-top:5px;" id="s1-val">-- %</div>
                 </div>
             </div>
 
             <div class="hud-card" onmouseenter="linkCards('card2', 's2-target')" onmouseleave="hideLink()" id="card2">
-                <div class="decal-tl"></div>
-                <div class="decal-br"></div>
+                <div class="decal-tl"></div><div class="decal-br"></div>
                 <div class="hw-id">REV: 4.0.5</div>
-                <div class="spark-wrapper"><svg viewBox="0 0 100 50" preserveAspectRatio="none"
-                        style="width:100%; height:100%;">
-                        <polyline id="spark-w2" class="spark-line" points="" />
-                    </svg></div>
+                <div class="spark-wrapper"><svg viewBox="0 0 100 50" preserveAspectRatio="none" style="width:100%; height:100%;"><polyline id="spark-w2" class="spark-line" points=""/></svg></div>
 
                 <div style="margin-bottom:15px;">
                     <div class="micro-label">COORDINATES: 23.82° N, 90.42° E</div>
                     <div class="card-title">SECTOR 02 // WHEAT</div>
-                    <div id="g2-stat" class="bracket-val" style="margin-top:5px; color:var(--theme-danger)">[ STATUS:
-                        GATE_CLOSED ]</div>
+                    <div id="g2-stat" class="bracket-val" style="margin-top:5px; color:var(--theme-danger)">[ STATUS: GATE_CLOSED ]</div>
                 </div>
-
+                
                 <div style="display:flex; align-items:baseline; gap:5px;">
                     <span class="big-val" id="w2-val">0.0</span> <span style="color:#666; font-size:0.9rem;">cm</span>
                 </div>
-
+                
                 <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">
                     <div class="micro-label">SENSOR_ARRAY_A</div>
                     <div class="sub-val" style="color:#aaa;">SOIL SATURATION</div>
-                    <div style="font-family:'JetBrains Mono'; font-size:1.2rem; color:var(--theme-warn); margin-top:5px;"
-                        id="s2-val">-- %</div>
+                    <div style="font-family:'JetBrains Mono'; font-size:1.2rem; color:var(--theme-warn); margin-top:5px;" id="s2-val">-- %</div>
                 </div>
             </div>
 
@@ -779,8 +403,7 @@
         <div style="color:var(--theme-primary); margin-right:15px;">SYS_LOG:</div>
         <div class="log-ticker">
             <div class="log-content" id="log-text">
-                [SYSTEM] BOOT SEQUENCE COMPLETE... [NET] MESH TOPOLOGY MAPPED... [IO] SENSORS ONLINE... [MESH] NODE_04
-                SYNCED...
+                [SYSTEM] BOOT SEQUENCE COMPLETE... [NET] MESH TOPOLOGY MAPPED... [IO] SENSORS ONLINE... [MESH] NODE_04 SYNCED...
             </div>
         </div>
     </div>
@@ -789,8 +412,9 @@
         // --- CONFIG ---
         const CONFIG = {
             topic: "awd_project/bibartan26/data",
-            emqx: { host: "broker.emqx.io", port: 8083, name: "EMQX", color: "#00f3ff", sec: "#00ff9d", glow: "rgba(0, 243, 255, 0.3)" },
-            hive: { host: "broker.hivemq.com", port: 8000, name: "HIVE", color: "#bc13fe", sec: "#ffaa00", glow: "rgba(188, 19, 254, 0.3)" },
+            // FIXED: Using WSS ports and useSSL:true for GitHub Pages support
+            emqx: { host: "broker.emqx.io", port: 8084, name: "EMQX", color: "#00f3ff", sec: "#00ff9d", glow: "rgba(0, 243, 255, 0.3)" },
+            hive: { host: "broker.hivemq.com", port: 8884, name: "HIVE", color: "#bc13fe", sec: "#ffaa00", glow: "rgba(188, 19, 254, 0.3)" },
             dry: 3500, wet: 1000, maxW: 2000, maxCm: 10
         };
 
@@ -803,7 +427,7 @@
         window.onload = () => {
             initParticles();
             initMouseTilt();
-
+            
             const log = document.getElementById('term-log');
             const steps = [
                 { msg: "> KERNEL_LOAD... OK", delay: 500, hex: 1 },
@@ -826,15 +450,15 @@
                 const bl = document.getElementById('boot-layer');
                 bl.style.opacity = 0;
                 bl.style.pointerEvents = 'none';
-
+                
                 document.querySelector('.header').classList.add('booted');
                 document.querySelector('.hud-section').classList.add('booted');
                 document.querySelector('.main-stage').classList.add('booted');
                 document.querySelector('.iso-plane').classList.add('booted');
-
+                
                 connectMQTT(CONFIG.emqx);
                 setInterval(() => {
-                    pktCount += Math.floor(Math.random() * 5);
+                    pktCount += Math.floor(Math.random()*5);
                     document.getElementById('packet-count').innerText = `PKTS: ${pktCount}`;
                 }, 500);
             }, 3500);
@@ -846,12 +470,12 @@
             const targetKey = isEmqx ? 'hive' : 'emqx';
             const theme = CONFIG[targetKey];
 
-            if (isEmqx) track.classList.add('active'); else track.classList.remove('active');
+            if(isEmqx) track.classList.add('active'); else track.classList.remove('active');
             document.body.classList.add('glitch-active');
-
+            
             const scan = document.getElementById('scanner');
             scan.classList.remove('active');
-            void scan.offsetWidth;
+            void scan.offsetWidth; 
             scan.classList.add('active');
 
             document.documentElement.style.setProperty('--theme-primary', theme.color);
@@ -861,8 +485,8 @@
             scrambleText('w1-val');
             scrambleText('s1-val');
 
-            if (client) try { client.disconnect() } catch (e) { };
-
+            if(client) try{client.disconnect()}catch(e){};
+            
             setTimeout(() => {
                 document.body.classList.remove('glitch-active');
                 connectMQTT(theme);
@@ -872,17 +496,17 @@
         function connectMQTT(theme) {
             const id = "cmd_" + new Date().getTime();
             client = new Paho.MQTT.Client(theme.host, theme.port, id);
-
+            
             client.onMessageArrived = (msg) => {
-                try { processData(JSON.parse(msg.payloadString)); } catch (e) { }
+                try { processData(JSON.parse(msg.payloadString)); } catch(e){}
             };
-
+            
             client.connect({
-                onSuccess: () => {
-                    client.subscribe(CONFIG.topic);
+                onSuccess: () => { 
+                    client.subscribe(CONFIG.topic); 
                     logEvent(`UPLINK ESTABLISHED: ${theme.name}`);
                 },
-                useSSL: false
+                useSSL: true // IMPORTANT for GitHub Pages
             });
         }
 
@@ -891,15 +515,15 @@
             const w2 = calcWater(data.w2);
             const s1 = calcSoil(data.s1);
             const s2 = calcSoil(data.s2);
-
+            
             updateScramble('w1-val', w1);
             updateScramble('w2-val', w2);
             updateScramble('s1-val', s1 + "%");
             updateScramble('s2-val', s2 + "%");
 
-            document.getElementById('w1-vol').style.transform = `scaleZ(${Math.min(w1 / 10, 1)})`;
-            document.getElementById('w2-vol').style.transform = `scaleZ(${Math.min(w2 / 10, 1)})`;
-
+            document.getElementById('w1-vol').style.transform = `scaleZ(${Math.min(w1/10, 1)})`;
+            document.getElementById('w2-vol').style.transform = `scaleZ(${Math.min(w2/10, 1)})`;
+            
             updateGate('g1-stat', data.g1);
             updateGate('g2-stat', data.g2);
 
@@ -909,19 +533,19 @@
 
         function updateScramble(id, finalVal) {
             const el = document.getElementById(id);
-            if (el.innerText === finalVal.toString()) return;
+            if(el.innerText === finalVal.toString()) return;
             let i = 0;
             const t = setInterval(() => {
                 el.innerText = Math.random().toString(36).substring(2, 6).toUpperCase();
                 i++;
-                if (i > 4) { clearInterval(t); el.innerText = finalVal; }
+                if(i > 4) { clearInterval(t); el.innerText = finalVal; }
             }, 40);
         }
-        function scrambleText(id) { document.getElementById(id).innerText = "X" + Math.floor(Math.random() * 99); }
+        function scrambleText(id) { document.getElementById(id).innerText = "X" + Math.floor(Math.random()*99); }
 
         function updateGate(id, state) {
             const el = document.getElementById(id);
-            if (state == 1 || state == "1" || state == true) {
+            if(state == 1 || state == "1" || state == true) {
                 el.innerText = "[ STATUS: GATE_OPEN ]";
                 el.style.color = "var(--theme-primary)";
             } else {
@@ -932,29 +556,29 @@
 
         function initMouseTilt() {
             document.addEventListener('mousemove', (e) => {
-                if (window.innerWidth < 768) return; // Disable on mobile
+                if(window.innerWidth < 768) return; // Disable tilt on mobile
                 const x = (window.innerWidth / 2 - e.clientX) / 100;
                 const y = (window.innerHeight / 2 - e.clientY) / 100;
                 const plane = document.querySelector('.tilt-wrapper');
-                if (document.querySelector('.iso-plane').classList.contains('booted')) {
+                if(document.querySelector('.iso-plane').classList.contains('booted')) {
                     plane.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
                 }
             });
         }
 
         function linkCards(cardId, mapId) {
-            if (window.innerWidth < 768) return; // Disable on mobile
+            if(window.innerWidth < 768) return; // Disable vectors on mobile
             const linkLine = document.getElementById('active-link');
             linkLine.style.display = 'block';
             function update() {
-                if (linkLine.style.display == 'none') return;
+                if(linkLine.style.display == 'none') return;
                 const cBox = document.getElementById(cardId).getBoundingClientRect();
                 const mBox = document.getElementById(mapId).getBoundingClientRect();
-
-                linkLine.setAttribute('x1', cBox.left + 20);
-                linkLine.setAttribute('y1', cBox.top + (cBox.height / 2));
-                linkLine.setAttribute('x2', mBox.left + (mBox.width / 2));
-                linkLine.setAttribute('y2', mBox.top + (mBox.height / 2));
+                
+                linkLine.setAttribute('x1', cBox.left + 20); 
+                linkLine.setAttribute('y1', cBox.top + (cBox.height/2));
+                linkLine.setAttribute('x2', mBox.left + (mBox.width/2));
+                linkLine.setAttribute('y2', mBox.top + (mBox.height/2));
                 requestAnimationFrame(update);
             }
             update();
@@ -975,8 +599,8 @@
             const cvs = document.getElementById('particle-canvas');
             const ctx = cvs.getContext('2d');
             cvs.width = window.innerWidth; cvs.height = window.innerHeight;
-
-            const particles = Array.from({ length: 40 }, () => ({
+            
+            const particles = Array.from({length: 40}, () => ({
                 x: Math.random() * cvs.width,
                 y: Math.random() * cvs.height,
                 s: Math.random() * 2,
@@ -984,24 +608,23 @@
             }));
 
             function loop() {
-                ctx.clearRect(0, 0, cvs.width, cvs.height);
+                ctx.clearRect(0,0,cvs.width,cvs.height);
                 ctx.fillStyle = activeBroker === 'emqx' ? '#00f3ff' : '#bc13fe';
                 particles.forEach(p => {
                     p.y -= p.dy;
-                    if (p.y < 0) p.y = cvs.height;
+                    if(p.y < 0) p.y = cvs.height;
                     ctx.globalAlpha = p.s / 5;
-                    ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI*2); ctx.fill();
                 });
                 requestAnimationFrame(loop);
             }
             loop();
         }
 
-        function calcWater(raw) { if (!raw) return 0; return Math.max(0, Math.min((raw / CONFIG.maxW) * CONFIG.maxCm, 15)).toFixed(1); }
-        function calcSoil(raw) { if (!raw) return 0; return Math.round(Math.max(0, Math.min((raw - CONFIG.dry) * 100 / (CONFIG.wet - CONFIG.dry), 100))); }
-        function logEvent(msg) { document.getElementById('log-text').innerHTML += ` &nbsp;&nbsp; [${new Date().toLocaleTimeString('en-US', { hour12: false })}] ${msg}`; }
+        function calcWater(raw) { if(!raw) return 0; return Math.max(0, Math.min((raw/CONFIG.maxW)*CONFIG.maxCm, 15)).toFixed(1); }
+        function calcSoil(raw) { if(!raw) return 0; return Math.round(Math.max(0, Math.min((raw-CONFIG.dry)*100/(CONFIG.wet-CONFIG.dry), 100))); }
+        function logEvent(msg) { document.getElementById('log-text').innerHTML += ` &nbsp;&nbsp; [${new Date().toLocaleTimeString('en-US',{hour12:false})}] ${msg}`; }
 
     </script>
 </body>
-
 </html>
