@@ -2,7 +2,7 @@
 
 **AWD MESH | ORBITAL COMMAND V4.0** — A futuristic real-time agricultural monitoring dashboard powered by MQTT data streaming and cutting-edge WebGL visualizations.
 
-**Live Demo:** [https://dark77ness.github.io/AWD-Orbital-Command/](https://dark77ness.github.io/AWD-Orbital-Command/)
+**Live Demo:** [https://awd-orbital-command.pages.dev/](https://awd-orbital-command.pages.dev/)
 
 ---
 
@@ -42,7 +42,7 @@ AWD Orbital Command is an advanced web-based control center designed to monitor 
 AWD-Orbital-Command/
 ├── index.html          # Main application (single-file)
 ├── LICENSE             # Apache 2.0 License
-└── README.md          # This file
+└── README.md           # This file
 ```
 
 ---
@@ -51,11 +51,9 @@ AWD-Orbital-Command/
 
 ### Access the Application
 
-The application is hosted on GitHub Pages. Simply visit:
+The application is hosted online. Simply visit:
 
-```
-https://dark77ness.github.io/AWD-Orbital-Command/
-```
+[https://awd-orbital-command.pages.dev/](https://awd-orbital-command.pages.dev/)
 
 No installation or build process required—just open in your browser!
 
@@ -63,7 +61,7 @@ No installation or build process required—just open in your browser!
 
 1. **Fork this repository** or clone it:
    ```bash
-   git clone https://github.com/DaRk77NesS/AWD-Orbital-Command.git
+   git clone https://github.com/nafis-al-fuad/AWD-Orbital-Command.git
    cd AWD-Orbital-Command
    ```
 
@@ -173,6 +171,14 @@ Two data cards for Sector 01 and Sector 02, each displaying:
 ---
 
 ## Technologies Used
+
+<table>
+  <tr>
+    <td align="center" width="33%"><strong>Frontend</strong><br><br><img src="https://img.shields.io/badge/HTML5-Document%20structure-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5"><br><img src="https://img.shields.io/badge/CSS3-Responsive%20UI-1572B6?style=for-the-badge&logo=css3&logoColor=white" alt="CSS3"><br><img src="https://img.shields.io/badge/JavaScript-Interactive%20dashboard-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript"></td>
+    <td align="center" width="33%"><strong>Live Data</strong><br><br><img src="https://img.shields.io/badge/MQTT-Paho%20client-660066?style=for-the-badge" alt="MQTT with Paho client"><br><img src="https://img.shields.io/badge/WebSockets-Secure%20live%20stream-4353FF?style=for-the-badge" alt="WebSockets"><br><img src="https://img.shields.io/badge/Google%20Fonts-Inter%20%2B%20JetBrains%20Mono-4285F4?style=for-the-badge&logo=googlefonts&logoColor=white" alt="Google Fonts"></td>
+    <td align="center" width="33%"><strong>Visualization</strong><br><br><img src="https://img.shields.io/badge/Canvas-Particle%20effects-000000?style=for-the-badge" alt="Canvas API"><br><img src="https://img.shields.io/badge/SVG-Sparklines%20%26%20links-FFB13B?style=for-the-badge&logo=svg&logoColor=white" alt="SVG"><br><img src="https://img.shields.io/badge/CSS-3D%20transforms-1572B6?style=for-the-badge&logo=css3&logoColor=white" alt="CSS 3D transforms"></td>
+  </tr>
+</table>
 
 ### Libraries & APIs
 - **MQTT**: [Paho MQTT Client](https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js)
